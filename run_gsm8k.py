@@ -282,7 +282,7 @@ if __name__ == '__main__':
         
     
     if "knn+" in args.use_ir:
-        from ir_knn_st import FastKNNMemory
+        from rewards.ir_knn_st import FastKNNMemory
         knn_memory_exploit = FastKNNMemory(max_keys=10000, max_values=100, history_size=100, anneal_rate=1)
         knn_memory_explore = FastKNNMemory(max_keys=10000, max_values=100, history_size=100, anneal_rate=1, explore_phase=500)
         # if "Llama" in args.model_name:
@@ -291,25 +291,22 @@ if __name__ == '__main__':
         reward_list.append(novelty_reward_func_exploit)
         reward_list.append(novelty_reward_func_explore)
     elif "knn" in args.use_ir:
-        from ir_knn_st import FastKNNMemory
+        from rewards.ir_knn_st import FastKNNMemory
         knn_memory_exploit = FastKNNMemory(max_keys=10000, max_values=1000, history_size=100, anneal_rate=1)
         # if "Llama" in args.model_name:
         #     reward_list.append(novelty_reward_func_exploit_bypass_template_func)
         # else:
         reward_list.append(novelty_reward_func_exploit)
     if "entropy" in args.use_ir:
-        from ir_entropy import EntropyNoveltyEstimator
+        from rewards.ir_entropy import EntropyNoveltyEstimator
         entropy = EntropyNoveltyEstimator(history_size=1000)
         reward_list.append(entropy_reward_func)
     if "ltree" in args.use_ir:
-        from ir_lexical_novelty import TreeNoveltyEstimator
+        from rewards.ir_lexical_novelty import TreeNoveltyEstimator
         ltree = TreeNoveltyEstimator(history_size=50)
         reward_list.append(lexical_reward_func)
     if 'cosine' in args.use_ir:
         reward_list.append(get_cosine_scaled_reward(max_len=args.L))
-
-
-
 
 
     train_dataset = get_gsm8k_questions(split = "train", num_shots=args.num_shots).shuffle(seed=args.seed) 
