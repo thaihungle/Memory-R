@@ -140,11 +140,6 @@ def get_gsm8k_questions(split = "train", num_shots=0) -> Dataset:
     return data # type: ignore
 
 
-
-
-
-
-
 # Reward functions
 def correctness_reward_func(prompts, completions, answer, **kwargs) -> list[float]:
     responses = [completion[0]['content'] for completion in completions]
