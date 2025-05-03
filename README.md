@@ -1,7 +1,8 @@
 # Memory-R
 
 ## Code Reference:
-- GSM8K: https://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb
+- https://gist.github.com/willccbb/4676755236bb08cab5f4e54a0475d6fb
+- https://github.com/huggingface/open-r1
 
 ## Setup
 ```bash
