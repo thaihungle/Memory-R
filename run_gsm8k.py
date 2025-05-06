@@ -177,7 +177,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train GRPO')
     parser.add_argument('--model_name', type=str, required=True, default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument('--use_ir', type=str, required=True, default="memoryr", help="types of intrinsic rewards (r1, cosine, memoryr, memoryr+)")
-    parser.add_argument('--k', type=int, required=True, default=1)
+    parser.add_argument('--k', type=int, required=False, default=1)
     parser.add_argument('--num_shots', type=int, required=True, default=0)
     parser.add_argument('--nepochs', type=int, required=True, default=1)
     parser.add_argument('--seed', type=int, required=True, default=2025)
