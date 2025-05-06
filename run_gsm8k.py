@@ -40,22 +40,6 @@ class WandbTrainingCallback(TrainerCallback):
         if logs:
             wandb.log(logs)
 
-# model_size = "0.5B"
-# model_name = f"meta-llama/Llama-3.2-{model_size}-Instruct"
-# model_name = f"Qwen/Qwen2.5-{model_size}-Instruct"
-
-# Reward functions
-# def novelty_reward_func_explore(prompts, completions, answer, **kwargs) -> list[float]:
-#     responses = [completion[0]['content'] for completion in completions]
-#     q = prompts[0][-1]['content']
-#     # extracted_responses = [extract_xml_reasoning(r) for r in responses]
-#     extracted_responses = responses
-#     rewards = []
-#     for r in extracted_responses:
-#         s = knn_memory_explore.novelty_score_mean(q, r, k=args.k)
-#         rewards.append(s*0.05)
-#         knn_memory_explore.insert_pair(q, r)
-#     return rewards
 
 def generate_gsm8k(
     model,
@@ -155,12 +139,7 @@ def novelty_reward_func_explore(prompts, completions, answer, **kwargs) -> list[
     q = prompts[0][-1]['content']
     extracted_responses = [extract_xml_answer(r) for r in responses]
     extracted_reasoning = [extract_xml_reasoning(r) for r in responses]
-    # extracted_responses = responses
     rewards = []
-    # contents = [completion[0]["content"] for completion in completions]
-    # for c in contents:
-    #     if count_xml(c)>0:
-    #         knn_memory_exploit.insert_pair(q, c)
     for r, a, c in zip(extracted_responses, answer, extracted_reasoning):
         if r!=a:
             knn_memory_explore.insert_pair(q, c)
@@ -177,16 +156,11 @@ def novelty_reward_func_exploit(prompts, completions, answer, **kwargs) -> list[
     q = prompts[0][-1]['content']
     extracted_responses = [extract_xml_answer(r) for r in responses]
     extracted_reasoning = [extract_xml_reasoning(r) for r in responses]
-    # extracted_responses = responses
     rewards = []
-    # contents = [completion[0]["content"] for completion in completions]
-    # for c in contents:
-    #     if count_xml(c)>0:
-    #         knn_memory_exploit.insert_pair(q, c)
+
     for r, a, c in zip(extracted_responses, answer, extracted_reasoning):
         if r==a:
             knn_memory_exploit.insert_pair(q, c)
-            # print("insert ..")
         s = knn_memory_exploit.novelty_score_mean(q, c, k=args.k)
         if s is not None:
             rewards.append(1-s)
@@ -194,52 +168,7 @@ def novelty_reward_func_exploit(prompts, completions, answer, **kwargs) -> list[
             rewards.append(0)
     return rewards
 
-def novelty_reward_func_exploit_bypass_template_func(prompts, completions, answer, **kwargs) -> list[float]:
-    responses = [completion[0]['content'] for completion in completions]
-    q = prompts[0][-1]['content']
-    rewards = []
-    extracted_responses = []
-    for r in responses:
-        all_numbers = re.findall('\d+[.,]?\d*\s', r)
-        if len(all_numbers) > 0:
-            extracted_responses.append(all_numbers[-1].replace('.', '').replace(',', '').replace('\n', ''))
-        else:
-            extracted_responses.append(f"-1uiekc7") # no reward
-            # print(f"all_numbers = {all_numbers}, check this response : {r}")
-    for r, a in zip(extracted_responses, answer):
-        s1 = knn_memory_exploit.novelty_score_mean(q, r, k=args.k)
-        s2 = knn_memory_explore.novelty_score_mean(q, r, k=args.k)
-        if r==a:
-            knn_memory_exploit.insert_pair(q, r)
-        else:
-            knn_memory_explore.insert_pair(q, r)
-        
-        rewards.append((1-s1)*1)
 
-    return rewards
-
-def entropy_reward_func(prompts, completions, answer, **kwargs)-> list[float]:
-    responses = [completion[0]['content'] for completion in completions]
-    q = prompts[0][-1]['content']
-    extracted_responses = [extract_xml_reasoning(r) for r in responses]
-    # extracted_responses = responses
-    rewards = []
-    for r in extracted_responses:
-        s  =  entropy.update_and_score(r)
-        rewards.append(s)
-    return rewards
-
-def lexical_reward_func(prompts, completions, answer, **kwargs)-> list[float]:
-    responses = [completion[0]['content'] for completion in completions]
-    q = prompts[0][-1]['content']
-    extracted_responses = [extract_xml_reasoning(r) for r in responses]
-    # extracted_responses = responses
-    rewards = []
-    for r in extracted_responses:
-        ltree.insert(r)
-        s  =  ltree.compute_novelty(r)
-        rewards.append(s*0.1)
-    return rewards
 
 
 if __name__ == '__main__':
@@ -247,7 +176,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train GRPO')
     parser.add_argument('--model_name', type=str, required=True, default="Qwen/Qwen2.5-0.5B-Instruct")
-    parser.add_argument('--use_ir', type=str, required=True, default="knn")
+    parser.add_argument('--use_ir', type=str, required=True, default="memoryr", help="types of intrinsic rewards (r1, cosine, memoryr, memoryr+)")
     parser.add_argument('--k', type=int, required=True, default=1)
     parser.add_argument('--num_shots', type=int, required=True, default=0)
     parser.add_argument('--nepochs', type=int, required=True, default=1)
@@ -275,36 +204,18 @@ if __name__ == '__main__':
             soft_format_reward_func,
             strict_format_reward_func,
             int_reward_func,
-            correctness_reward_func]
-
-    # if "Llama" in args.model_name:
-    #     reward_list[-1] =correctness_reward_bypass_template_func
-        
+            correctness_reward_func] 
     
-    if "knn+" in args.use_ir:
+    if "memoryr+" in args.use_ir:
         from rewards.ir_knn_st import FastKNNMemory
         knn_memory_exploit = FastKNNMemory(max_keys=10000, max_values=100, history_size=100, anneal_rate=1)
         knn_memory_explore = FastKNNMemory(max_keys=10000, max_values=100, history_size=100, anneal_rate=1, explore_phase=500)
-        # if "Llama" in args.model_name:
-        #     reward_list.append(novelty_reward_func_exploit_bypass_template_func)
-        # else:
         reward_list.append(novelty_reward_func_exploit)
         reward_list.append(novelty_reward_func_explore)
-    elif "knn" in args.use_ir:
+    elif "memoryr" in args.use_ir:
         from rewards.ir_knn_st import FastKNNMemory
         knn_memory_exploit = FastKNNMemory(max_keys=10000, max_values=1000, history_size=100, anneal_rate=1)
-        # if "Llama" in args.model_name:
-        #     reward_list.append(novelty_reward_func_exploit_bypass_template_func)
-        # else:
         reward_list.append(novelty_reward_func_exploit)
-    if "entropy" in args.use_ir:
-        from rewards.ir_entropy import EntropyNoveltyEstimator
-        entropy = EntropyNoveltyEstimator(history_size=1000)
-        reward_list.append(entropy_reward_func)
-    if "ltree" in args.use_ir:
-        from rewards.ir_lexical_novelty import TreeNoveltyEstimator
-        ltree = TreeNoveltyEstimator(history_size=50)
-        reward_list.append(lexical_reward_func)
     if 'cosine' in args.use_ir:
         reward_list.append(get_cosine_scaled_reward(max_len=args.L))
 
