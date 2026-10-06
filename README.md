@@ -6,6 +6,8 @@
 
 **Hung Le · Van Dai Do · Dung Nguyen · Svetha Venkatesh**
 
+Published in TMLR 2025 · Presented at NeurIPS 2026, Sydney
+
 [![TMLR 2025](https://img.shields.io/badge/TMLR-2025-8A2BE2.svg)](https://openreview.net/forum?id=tmdwuU2uKs)
 [![NeurIPS 2026 Poster](https://img.shields.io/badge/NeurIPS%202026-Poster-4B44CE.svg)](https://neurips.cc/virtual/2026/loc/sydney/poster/156787)
 [![arXiv](https://img.shields.io/badge/arXiv-2504.02273-b31b1b.svg)](https://arxiv.org/abs/2504.02273)
